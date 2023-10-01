@@ -11,9 +11,6 @@ add_executable(syncserver
 
 find_package(Jsoncpp REQUIRED)
 
-message(JSONCPP_INCLUDE_DIR="${JSONCPP_INCLUDE_DIR}")
-message(JSONCPP_LIBRARIES="${JSONCPP_LIBRARIES}")
-
 target_include_directories(
   syncserver 
   PRIVATE

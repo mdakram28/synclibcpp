@@ -30,7 +30,6 @@ extern Json::Value DIFF_UNCHANGED;
  *
  * Default behaviour is add
  */
-Json::Value make_diff_json(DiffType diffType);
 
 bool get_diff(const Json::Value &old_json, const Json::Value &new_json,
              Json::Value &diff_json, std::string &err_msg);

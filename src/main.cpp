@@ -47,12 +47,13 @@ bool test_diff(std::string &old_str, std::string &new_str) {
         total_saving += saving;
     } catch (Json::LogicError &err) {
         std::cout << "Exception: " << err.what() << std::endl;
-        std::cout << "JSON DIff: " << diff_json << std::endl;
         return false;
     }
+    std::cout << "JSON DIff: " << diff_json << std::endl;
 
     if (recon_json != new_json) {
         std::cout << "reconstructed match faied: " << err_msg << std::endl;
+        std::cout << "Reconstructed : " << recon_json << std::endl;
         return false;
     }
 
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
 
     std::string json_1 = "1";
     std::string json_2 = "2";
-    std::vector<std::string> json_strs = {
+    std::vector<std::string> json_strs_old = {
         "1",
         "2",
         "3.14",
@@ -91,12 +92,25 @@ int main(int argc, char *argv[]) {
         "[1, 2, 3, {\"a\": 3}, 5, 6]",
         "[1, 2, 3, {\"a\": 4}, 5, 6]",
 
+
     };
 
+    std::vector<std::string> json_strs = {
+        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Scheduled\",\"logs\":[]}}",
+        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[]}}",
+        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\"]}}",
+        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\"]}}",
+        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\"]}}",
+    };
+
+    int l = json_strs.size();
     int tc = 0;
     int passed = 0;
-    for (std::string &old_str : json_strs) {
-        for (std::string &new_str : json_strs) {
+    for (int i=0; i<l; i++) {
+        std::string &old_str = json_strs[i];
+        for (int j=i; j<l; j++) {
+            std::string &new_str = json_strs[j];
+
             std::cout << "------- Test Case #" << tc++ << "-------" << std::endl;
             if (test_diff(old_str, new_str)) {
                 passed++;

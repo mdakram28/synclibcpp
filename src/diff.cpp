@@ -18,15 +18,15 @@
     diff_json = _ret_json;  \
     return true;
 
-Json::Value DIFF_DELETE = make_diff_json(DiffType::Delete);
-;
-Json::Value DIFF_UNCHANGED = make_diff_json(DiffType::Unchanged);
-
 Json::Value make_diff_json(DiffType diffType) {
     Json::Value val;
     val["_t"] = std::string{static_cast<char>(diffType)};
     return val;
 }
+
+Json::Value DIFF_DELETE = make_diff_json(DiffType::Delete);
+
+Json::Value DIFF_UNCHANGED = make_diff_json(DiffType::Unchanged);
 
 DiffType get_diff_type(Json::Value &val) {
     const auto type = val.type();
@@ -46,10 +46,10 @@ bool get_diff_object(const Json::Value &old_json, const Json::Value &new_json,
         std::string key = it.key().asString();
         if (new_json.isMember(key)) {
             Json::Value child_diff;
-            if (!get_diff(&(*it), new_json[key], child_diff, err_msg)) {
+            if (!get_diff(old_json[key], new_json[key], child_diff, err_msg)) {
                 RET_ERROR(err_msg);
             }
-            DiffType diff_type = get_diff_type(diff);
+            DiffType diff_type = get_diff_type(child_diff);
             if (diff_type != DiffType::Unchanged) {
                 diff[key] = child_diff;
             }
@@ -143,6 +143,7 @@ bool get_diff(const Json::Value &old_json, const Json::Value &new_json,
               Json::Value &diff_json, std::string &err_msg) {
     auto old_type = old_json.type(), new_type = new_json.type();
 
+    
     if (old_type != new_type) {
         RET_JSON(new_json);
     }
@@ -211,7 +212,6 @@ bool apply_diff_PatchArray(Json::Value &new_arr, Json::Value &diff, std::string 
             new_arr[new_length - i - 1] = old_arr[old_length - i - 1];
         }
 
-
         int diff_end = std::min(end, new_end);
 
         int i = start;
@@ -222,7 +222,7 @@ bool apply_diff_PatchArray(Json::Value &new_arr, Json::Value &diff, std::string 
         }
 
         for (; i < new_end; i++) {
-            new_arr[i] = (*it)[i - start];
+            new_arr[i] = diff[key][i - start];
         }
     }
 
@@ -233,7 +233,6 @@ bool apply_diff(Json::Value &obj, Json::Value &diff, std::string &err_msg) {
     const Json::ValueType obj_type = obj.type();
 
     const DiffType diff_type = get_diff_type(diff);
-    // std::cout << "DiffType = " << static_cast<char>(diff_type) << std::endl;
     switch (diff_type) {
         case DiffType::Delete:
             RET_ERROR("Cannot apply delete diff");
