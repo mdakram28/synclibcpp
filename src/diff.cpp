@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 
+#define MERGE_THRES 6
+
 #define DEBUG(var) std::cout << #var << " = " << var << std::endl;
 
 #define RET_ERROR(_err_msg) \
@@ -21,12 +23,11 @@
     diff_json = _ret_json;  \
     return true;
 
-#define FOR_EACH_DIFF_KEY(_diff, _key_name, _body)                          \
-    auto end = _diff.end();                                                 \
-    for (Json::Value::const_iterator it = _diff.begin(); it != end; ++it) { \
-        std::string _key_name = it.key().asString();                        \
-        if (_key_name == "_t") continue;                                    \
-        _body                                                               \
+#define FOR_EACH_DIFF_KEY(_diff, _key_name, _body)                                  \
+    for (Json::Value::const_iterator it = _diff.begin(); it != _diff.end(); ++it) { \
+        std::string _key_name = it.key().asString();                                \
+        if (_key_name == "_t") continue;                                            \
+        _body                                                                       \
     }
 
 Json::Value make_diff_json(DiffType diffType) {
@@ -52,18 +53,86 @@ bool goto_path(Json::Value **target_obj, std::string &last_key, std::string &pat
     int next_sep_ind;
     while ((next_sep_ind = path.find('/', prev_sep_ind + 1)) != std::string::npos) {
         std::string target_key = path.substr(prev_sep_ind + 1, next_sep_ind - (prev_sep_ind + 1));
-        // DEBUG(prev_sep_ind)
-        // DEBUG(next_sep_ind)
-        // DEBUG(target_key)
-        if ((*target_obj)->isMember(target_key)) {
-            *target_obj = &(**target_obj)[target_key];
-        } else {
-            RET_ERROR("Path to non-existent object : " + target_key);
-        }
         prev_sep_ind = next_sep_ind;
+        auto target_type = (*target_obj)->type();
+        if (target_type == Json::ValueType::objectValue) {
+            if ((*target_obj)->isMember(target_key)) {
+                *target_obj = &(**target_obj)[target_key];
+            } else {
+                RET_ERROR("Path to non-existent object : " + target_key);
+            }
+        } else if (target_type == Json::ValueType::arrayValue) {
+            int idx = std::stoi(target_key);
+            if ((*target_obj)->isValidIndex(idx)) {
+                *target_obj = &(**target_obj)[idx];
+            } else {
+                RET_ERROR("Array index does not exist : " + target_key);
+            }
+        } else {
+            RET_ERROR("Cannot go inside non object :" + target_key);
+        }
     }
     last_key = path.substr(prev_sep_ind + 1);
     return true;
+}
+
+bool merge_with_children(Json::Value &diff_json, std::string &err_msg) {
+    int num_patch_array = 0;
+    int num_patch_string = 0;
+    int num_patch_object = 0;
+    DiffType diff_type = get_diff_type(diff_json);
+
+    std::vector<std::string> to_remove;
+    FOR_EACH_DIFF_KEY(diff_json, diff_key, {
+        Json::Value child_diff = diff_json[diff_key];
+        DiffType child_diff_type = get_diff_type(child_diff);
+        if (child_diff_type == diff_type && child_diff.size() < MERGE_THRES) {
+            FOR_EACH_DIFF_KEY(child_diff, child_diff_key, {
+                diff_json[diff_key + "/" + child_diff_key] = child_diff[child_diff_key];
+            })
+            to_remove.push_back(diff_key);
+        }
+    })
+
+    while (to_remove.size() > 0) {
+        diff_json.removeMember(to_remove.back());
+        to_remove.pop_back();
+    }
+
+    FOR_EACH_DIFF_KEY(diff_json, path, {
+        DiffType diff_type = get_diff_type(diff_json[path]);
+        switch (diff_type) {
+            case DiffType::PatchArray:
+                num_patch_array++;
+                break;
+            case DiffType::PatchString:
+                num_patch_string++;
+                break;
+            case DiffType::PatchObject:
+                num_patch_object++;
+                break;
+        }
+    });
+
+    DiffType merge_type;
+    if (num_patch_array == diff_json.size() - 1) {
+        merge_type = DiffType::PatchArray;
+    } else if (num_patch_object == diff_json.size() - 1) {
+        merge_type = DiffType::PatchObject;
+    } else if (num_patch_string == diff_json.size() - 1) {
+        merge_type = DiffType::PatchString;
+    } else {
+        return true;
+    }
+
+    Json::Value new_diff = make_diff_json(merge_type);
+    FOR_EACH_DIFF_KEY(diff_json, path, {
+        auto child_diff = diff_json[path];
+        FOR_EACH_DIFF_KEY(child_diff, inner_path, {
+            new_diff[path + "/" + inner_path] = child_diff[inner_path];
+        });
+    });
+    RET_JSON(new_diff);
 }
 
 bool get_diff_object(const Json::Value &old_json, const Json::Value &new_json,
@@ -72,7 +141,6 @@ bool get_diff_object(const Json::Value &old_json, const Json::Value &new_json,
 
     int num_deleted = 0;
     int num_replaced = 0;
-    int num_patch_array = 0;
     for (Json::Value::const_iterator it = old_json.begin(); it != old_json.end(); ++it) {
         std::string key = it.key().asString();
         if (new_json.isMember(key)) {
@@ -82,7 +150,7 @@ bool get_diff_object(const Json::Value &old_json, const Json::Value &new_json,
             }
             DiffType diff_type = get_diff_type(child_diff);
 
-            if ((diff_type == DiffType::PatchObject) && child_diff.size() < 4) {
+            if ((diff_type == DiffType::PatchObject) && child_diff.size() < MERGE_THRES) {
                 FOR_EACH_DIFF_KEY(child_diff, child_key, {
                     diff[key + "/" + child_key] = child_diff[child_key];
                 });
@@ -91,10 +159,6 @@ bool get_diff_object(const Json::Value &old_json, const Json::Value &new_json,
                 if (diff_type == DiffType::Replace) {
                     num_replaced++;
                 }
-            }
-
-            if (diff_type == DiffType::PatchArray) {
-                num_patch_array++;
             }
         } else {
             num_deleted++;
@@ -119,15 +183,8 @@ bool get_diff_object(const Json::Value &old_json, const Json::Value &new_json,
         RET_JSON(DIFF_UNCHANGED);
     }
 
-    if (num_patch_array == diff.size() - 1) {
-        Json::Value new_diff = make_diff_json(DiffType::PatchArray);
-        FOR_EACH_DIFF_KEY(diff, path, {
-            auto arr_diff = diff[path];
-            FOR_EACH_DIFF_KEY(arr_diff, inner_path, {
-                new_diff[path + "/" + inner_path] = arr_diff[inner_path];
-            });
-        });
-        RET_JSON(new_diff);
+    if (!merge_with_children(diff, err_msg)) {
+        RET_ERROR(err_msg);
     }
 
     RET_JSON(diff);
@@ -195,7 +252,6 @@ bool get_diff_array(const Json::Value &old_json, const Json::Value &new_json,
         } else if (diff_array.size() > 1) {
             diff[std::to_string(curr_start) + ":" + std::to_string(i)] = diff_array;
         }
-        RET_JSON(diff);
     } else {
         Json::Value diff_array = Json::arrayValue;
 
@@ -212,10 +268,65 @@ bool get_diff_array(const Json::Value &old_json, const Json::Value &new_json,
             diff_array.append(new_json[i]);
         }
 
-        std::string key = std::to_string(start) + ":" + std::to_string(end);
-        diff[key] = diff_array;
-        RET_JSON(diff);
+        diff[std::to_string(start) + ":" + std::to_string(end)] = diff_array;
     }
+
+    // Size Optimizations
+    if (!merge_with_children(diff, err_msg)) {
+        RET_ERROR(err_msg);
+    }
+
+    RET_JSON(diff);
+}
+
+bool get_diff_string(const std::string &old_str, const std::string &new_str,
+                     Json::Value &diff_json, std::string &err_msg) {
+    int start = 0;
+    int old_length = old_str.length();
+    int new_length = new_str.length();
+    for (; start < old_length; start++) {
+        if (old_str[start] != new_str[start]) break;
+    }
+
+    int end = old_length, new_end = new_length;
+    for (; end > start && new_end > start; end--, new_end--) {
+        if (old_str[end - 1] != new_str[new_end - 1]) break;
+    }
+
+    int preserved = start + old_length - end;
+    if (preserved < 20) {
+        if (old_str == new_str) {
+            RET_JSON(DIFF_UNCHANGED);
+        }
+        RET_JSON(new_str);
+    }
+
+    Json::Value diff = make_diff_json(DiffType::PatchString);
+    if (old_length == new_length) {
+        int curr_start = start;
+        int i = start;
+        for (; i < end; i++) {
+            if (old_str[i] == new_str[i]) {
+                int num_diff = i - curr_start;
+                if (num_diff == 1) {
+                    diff[std::to_string(curr_start)] = new_str.substr(curr_start, num_diff);
+                } else if (num_diff > 1) {
+                    diff[std::to_string(curr_start) + ":" + std::to_string(i)] = new_str.substr(curr_start, num_diff);
+                }
+                curr_start = i + 1;
+            }
+        }
+        int num_diff = i - curr_start;
+        if (num_diff == 1) {
+            diff[std::to_string(curr_start)] = new_str.substr(curr_start, num_diff);
+        } else if (num_diff > 1) {
+            diff[std::to_string(curr_start) + ":" + std::to_string(i)] = new_str.substr(curr_start, num_diff);
+        }
+    } else {
+        diff[std::to_string(start) + ":" + std::to_string(end)] = new_str.substr(start, new_end - start);
+    }
+
+    RET_JSON(diff);
 }
 
 bool get_diff(const Json::Value &old_json, const Json::Value &new_json,
@@ -238,11 +349,7 @@ bool get_diff(const Json::Value &old_json, const Json::Value &new_json,
                 RET_JSON(new_json);
             }
         case Json::ValueType::stringValue:
-            if (old_json == new_json) {
-                RET_JSON(DIFF_UNCHANGED);
-            } else {
-                RET_JSON(new_json);
-            }
+            return get_diff_string(old_json.asString(), new_json.asString(), diff_json, err_msg);
         case Json::ValueType::arrayValue:
             return get_diff_array(old_json, new_json, diff_json, err_msg);
         case Json::ValueType::objectValue:
@@ -336,6 +443,39 @@ bool apply_diff_PatchArray(Json::Value &obj, Json::Value &diff, std::string &err
     return true;
 }
 
+bool apply_diff_PatchString(Json::Value &obj, Json::Value &diff, std::string &err_msg) {
+    for (Json::Value::const_iterator it = diff.begin(); it != diff.end(); ++it) {
+        std::string path = it.key().asString();
+        if (path == "_t") continue;
+
+        std::string repl_str = diff[path].asString();
+        Json::Value *target_obj = &obj;
+        std::string last_key;
+        if (!goto_path(&target_obj, last_key, path, err_msg)) {
+            RET_ERROR(err_msg);
+        }
+
+        Json::Value &new_str = *target_obj;
+
+        if (new_str.type() != Json::ValueType::stringValue) {
+            RET_ERROR("Cannot apply 'S': Old obj is not of string type");
+        }
+
+        int start, end, sep_pos;
+        if ((sep_pos = last_key.find(':')) == std::string::npos) {
+            start = std::stoi(last_key);
+            end = start + 1;
+        } else {
+            start = std::stoi(last_key.substr(0, sep_pos));
+            end = std::stoi(last_key.substr(sep_pos + 1));
+        }
+
+        new_str = new_str.asString().replace(start, end - start, repl_str, 0, repl_str.length());
+    }
+
+    return true;
+}
+
 bool apply_diff(Json::Value &obj, Json::Value &diff, std::string &err_msg) {
     const Json::ValueType obj_type = obj.type();
 
@@ -353,6 +493,7 @@ bool apply_diff(Json::Value &obj, Json::Value &diff, std::string &err_msg) {
         case DiffType::PatchArray:
             return apply_diff_PatchArray(obj, diff, err_msg);
         case DiffType::PatchString:
+            return apply_diff_PatchString(obj, diff, err_msg);
         default:
             RET_ERROR("Unsupported diff type : " + std::string{static_cast<char>(diff_type)});
     }

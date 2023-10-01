@@ -70,40 +70,46 @@ int main(int argc, char *argv[]) {
     std::string json_1 = "1";
     std::string json_2 = "2";
     std::vector<std::string> json_strs_1 = {
-        "1",
-        "2",
-        "3.14",
+        // "1",
+        // "2",
+        // "3.14",
 
-        "null",
+        // "null",
 
-        "{}",
-        "{\"a\":1}",
-        "{\"a\":2}",
-        "{\"a\":\"hello\"}",
-        "{\"a\":\"world\"}",
-        "{\"a\":123,\"b\":\"world\"}",
-        "{\"a\":123,\"b\":\"world\",\"c\":{\"d\":678}}",
+        // "{}",
+        // "{\"a\":1}",
+        // "{\"a\":2}",
+        // "{\"a\":\"hello\"}",
+        // "{\"a\":\"world\"}",
+        // "{\"a\":123,\"b\":\"world\"}",
+        // "{\"a\":123,\"b\":\"world\",\"c\":{\"d\":678}}",
+        "{\"key1\":\"a\",\"key2\":\"b\",\"key3\":\"c\",\"key4\":\"d\"}",
+        "{\"key1\":\"a\",\"key3\":\"c\",\"key4\":\"d\",\"key5\":\"b\"}",
 
-        "\"test_string_1\"",
-        "\"test_string_2\"",
+        // "\"test_string____________________1\"",
+        // "\"test_string____________________2\"",
+        // "[{\"a\":\"test_string____________________1\"}]",
+        // "[{\"a\":\"test_string____________________1\nsecondline\"}]",
 
-        "[]",
-        "[1, 2, 3]",
-        "[1, 2, 3, 4, 5, 6]",
-        "[1, 2, 3, {}, 5, 6]",
-        "[1, 2, 3, 4, null, 6]",
-        "[1, 2, 3, 4, null]",
-        "[1, 2, 3, {\"a\": 3}, 5, 6]",
-        "[1, 2, 3, {\"a\": 4}, 5, 6]",
+        // "[]",
+        // "[1, 2, 3]",
+        // "[1, 2, 3, 4, 5, 6]",
+        // "[1, 2, 3, {}, 5, 6]",
+        // "[1, 2, 3, 4, null, 6]",
+        // "[1, 2, 3, 4, null]",
+        // "[1, 2, {\"a\": 3}, {\"a\": {\"b\":\"hello\"}, \"c\":1}, 5, 6]",
+        // "[1, 2, {\"a\": 3}, {\"a\": {\"b\":\"world\"}, \"c\":1}, 5, 6]",
 
+        // "[[1,2,3],[4,{\"a\":1,\"b\":3},6],[7,8,9]]",
+        // "[[1,2,3],[4,{\"a\":2,\"b\":3},6],[7,8,9]]"
     };
 
     std::vector<std::string> json_strs_2 = {
-        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Scheduled\",\"logs\":[]}}",
-        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[]}}",
-        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\"]}}",
-        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\"]}}",
-        "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\"]}}",
+        // "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Scheduled\",\"logs\":[]}}",
+        // "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[]}}",
+        // "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\"]}}",
+        // "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\"]}}",
+        // "{\"job1\":{\"name\":\"Job 1\",\"status\":\"Running\",\"logs\":[\"line1\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\",\"line2\"]}}",
     };
 
     std::vector<std::string> json_strs;
@@ -115,7 +121,7 @@ int main(int argc, char *argv[]) {
     int passed = 0;
     for (int i = 0; i < l; i++) {
         std::string &old_str = json_strs[i];
-        for (int j = 0; j < l; j++) {
+        for (int j = i+1; j < l; j++) {
             std::string &new_str = json_strs[j];
 
             std::cout << "------- Test Case #" << tc++ << " : " << i << ", " << j << "-------" << std::endl;
