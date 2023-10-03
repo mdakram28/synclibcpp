@@ -1,10 +1,10 @@
 #include <math.h>
 
-#include <cstdio>
-#include <iomanip>
-#include <iostream>
+#include <vector>
 
-#include "diff.h"
+#include "diff.hpp"
+#include "syncserver.cpp"
+
 
 double total_saving = 0;
 
@@ -64,7 +64,14 @@ bool test_diff(std::string &old_str, std::string &new_str) {
     return true;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char const *argv[])
+{
+    start_syncserver();
+    return EXIT_SUCCESS;
+}
+
+
+int ___main(int argc, char *argv[]) {
     std::printf("Sync Server!\n");
 
     std::string json_1 = "1";
@@ -97,8 +104,8 @@ int main(int argc, char *argv[]) {
         // "[1, 2, 3, {}, 5, 6]",
         // "[1, 2, 3, 4, null, 6]",
         // "[1, 2, 3, 4, null]",
-        // "[1, 2, {\"a\": 3}, {\"a\": {\"b\":\"hello\"}, \"c\":1}, 5, 6]",
-        // "[1, 2, {\"a\": 3}, {\"a\": {\"b\":\"world\"}, \"c\":1}, 5, 6]",
+        "[1, 2, {\"a\": 3}, {\"a\": {\"b\":\"hello\"}, \"c\":1}, 5, 6]",
+        "[1, 2, {\"a\": 3}, {\"a\": {\"b\":\"world\"}, \"c\":1}, 5, 6]",
 
         // "[[1,2,3],[4,{\"a\":1,\"b\":3},6],[7,8,9]]",
         // "[[1,2,3],[4,{\"a\":2,\"b\":3},6],[7,8,9]]"
