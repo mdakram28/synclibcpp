@@ -1,0 +1,44 @@
+{
+    "NULL": null,
+    
+    "NUM_1": 1,
+    "NUM_2": 1.5333333,
+    "NUM_3": 0,
+    "NUM_4": -1,
+
+    "ARRAY_1_EMPTY": [],
+    "ARRAY_2": [1, 2, 3],
+    "ARRAY_3": [1, 2, 3, 4, 5, 6],
+    "ARRAY_4": [1, 2, 3, {}, 5, 6],
+    "ARRAY_5": [1, 2, 3, 4, null, 6],
+    "ARRAY_6": [1, 2, 3, 4, null],
+    "ARRAY_7": [1, 2, {"a": 3}, {"a": {"b":"hello"}, "c":1}, 5, 6],
+    "ARRAY_8": [1, 2, {"a": 3}, {"a": {"b":"world"}, "c":1}, 5, 6],
+    
+    "ARRAY_9" : [[1,2,3],[4,{"a":1,"b":3},6],[7,8,9]],
+    "ARRAY_10": [[1,2,3],[4,{"a":2,"b":3},6],[7,8,9]],
+
+    "STRING_1": "test_string____________________1",
+    "STRING_2": "test_string____________________2",
+    "STRING_3": [{"a":"test_string____________________1"}],
+    "STRING_4": [{"a":"test_string____________________1\nsecondline"}],
+    "STRING_5": "",
+
+    
+
+    "OBJECT_1": {},
+    "OBJECT_2": {"a":1},
+    "OBJECT_3": {"a":2},
+    "OBJECT_4": {"a":"hello"},
+    "OBJECT_5": {"a":"world"},
+    "OBJECT_6": {"a":123,"b":"world"},
+    "OBJECT_7": {"a":123,"b":"world","c":{"d":678}},
+    "OBJECT_8": {"key1":"a","key2":"b","key3":"c","key4":"d"},
+    "OBJECT_9": {"key1":"a","key3":"c","key4":"d","key5":"b"},
+
+    "JOB_1": {"job1":{"name":"Job 1","status":"Scheduled","logs":[]}},
+    "JOB_2": {"job1":{"name":"Job 1","status":"Running","logs":[]}},
+    "JOB_3": {"job1":{"name":"Job 1","status":"Running","logs":["line1","line2"]}},
+    "JOB_4": {"job1":{"name":"Job 1","status":"Running","logs":["line1","line2","line2","line2","line2","line2"]}},
+    "JOB_5": {"job1":{"name":"Job 1","status":"Running","logs":["line1","line2","line2","line2","line2","line2","line2","line2","line2"]}}
+}

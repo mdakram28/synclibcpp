@@ -1,9 +1,5 @@
 
 #include "diff.hpp"
-
-#include <jsoncpp/json/config.h>
-#include <jsoncpp/json/value.h>
-#include <jsoncpp/json/writer.h>
 #include <math.h>
 
 #include <cstdio>

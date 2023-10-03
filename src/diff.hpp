@@ -2,10 +2,14 @@
 #ifndef __PROJECTS_SYNCLIBCPP_SRC_DIFF_H_
 #define __PROJECTS_SYNCLIBCPP_SRC_DIFF_H_
 
-#include <jsoncpp/json/json.h>
-#include <jsoncpp/json/value.h>
+#include <json/json.h>
+#include <json/value.h>
+#include <json/config.h>
+#include <json/writer.h>
+
 #include <iostream>
 #include <string>
+#define DEBUG(var) std::cout << #var << " = " << var << std::endl;
 
 enum DiffType {
     Delete = 'X',
@@ -21,7 +25,7 @@ extern Json::Value DIFF_UNCHANGED;
 
 /**
  *
- *
+ * 
  * X: Delete
  * P: Patch Object
  * A: Patch Array
